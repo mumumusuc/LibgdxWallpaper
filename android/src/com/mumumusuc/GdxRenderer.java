@@ -5,6 +5,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.util.Log;
 
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
@@ -22,6 +23,7 @@ import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
+import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.physics.bullet.Bullet;
 import com.badlogic.gdx.physics.bullet.collision.Collision;
 import com.badlogic.gdx.physics.bullet.collision.btBoxShape;
@@ -178,7 +180,11 @@ public class GdxRenderer implements ApplicationListener {
             return;
         }
         Model model = assets.get("models/andy.g3db", Model.class);
-        btCollisionShape shape = new btBoxShape(new Vector3(1f, 1f, 1f));
+        BoundingBox box = new BoundingBox();
+        model.calculateBoundingBox(box);
+        Vector3 vec = new Vector3();
+        vec = box.getDimensions(vec);
+        btCollisionShape shape = new btBoxShape(vec.scl(0.5f));
         GameObject obj = new GameObject.Builder()
                 .setMass(1f)
                 .setModel(model, true)

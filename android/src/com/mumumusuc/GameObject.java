@@ -4,18 +4,26 @@ import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionShape;
 import com.badlogic.gdx.physics.bullet.dynamics.btRigidBody;
 import com.badlogic.gdx.physics.bullet.linearmath.btMotionState;
+import com.badlogic.gdx.physics.bullet.linearmath.btTransform;
 import com.badlogic.gdx.utils.Disposable;
 
 public class GameObject extends ModelInstance implements Disposable {
     private Config cfg;
+    private Vector3 centerOffset;
     public final btRigidBody rigidBody;
     public final btMotionState motionState;
 
     private GameObject(Config cfg) {
         super(cfg.model);
+        centerOffset = new Vector3();
+        BoundingBox box = new BoundingBox();
+        cfg.model.calculateBoundingBox(box);
+        centerOffset.set(box.getCenter(centerOffset));
+        centerOffset.scl(-1);
         rigidBody = new btRigidBody(cfg.constructInfo);
         motionState = new MotionState();
         rigidBody.setMotionState(motionState);
@@ -88,6 +96,8 @@ public class GameObject extends ModelInstance implements Disposable {
                     null,
                     cfg.shape,
                     cfg.localInertia);
+            btTransform trans = new btTransform();
+            trans.setIdentity();
             return new GameObject(cfg);
         }
 
@@ -103,6 +113,7 @@ public class GameObject extends ModelInstance implements Disposable {
         @Override
         public void setWorldTransform(Matrix4 worldTrans) {
             transform.set(worldTrans);
+            transform.translate(centerOffset);
         }
     }
 }

@@ -67,7 +67,7 @@ public class AndroidLauncher extends AndroidApplication implements InputProcesso
 
     public void addBall(boolean isleft) {
         if (Math.random() > 0.1)
-            box2dEffectView.newCube();
+            box2dEffectView.newModel();
         else
             box2dEffectView.newModel();
     }
