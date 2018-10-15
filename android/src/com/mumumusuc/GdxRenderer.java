@@ -18,7 +18,6 @@ import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
-import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Vector3;
@@ -47,8 +46,7 @@ public class GdxRenderer implements ApplicationListener {
     private static final float PLANT_SIZE = 20f;
     private static final float PLANT_THICKNESS = 0.1f;
     private static final float CUBE_SIZE = PLANT_SIZE / 8;
-    private static final short MAX_GAME_OBJECT_COUNT = 25;
-    private static final short MAX_MODEL_COUNT = 5;
+    private static final short MAX_GAME_OBJECT_COUNT = 30;
     private static final short GROUND_FLAG = 1 << 8;
     private static final short OBJECT_FLAG = 1 << 9;
     private static final short ALL_FLAG = -1;
@@ -67,8 +65,7 @@ public class GdxRenderer implements ApplicationListener {
     private btCollisionConfiguration mColCfg;
     private btDispatcher mColDispatcher;
     private List<GameObject> mWalls = new ArrayList<>();
-    private List<GameObject> mCubes = new ArrayList<>();
-    private List<GameObject> mModels = new ArrayList<>();
+    private List<GameObject> mGameObjects = new ArrayList<>();
 
     public GdxRenderer() {
 
@@ -81,13 +78,12 @@ public class GdxRenderer implements ApplicationListener {
         float h = Gdx.graphics.getHeight();
         float cameraWidth = w / PXTM;
         float cameraHeight = h / PXTM;
-        final float WHR = Gdx.graphics.getWidth() / (float) Gdx.graphics.getHeight();
 
         Bullet.init();
 
         assets = new AssetManager();
         assets.load("models/andy.g3db", Model.class);
-        assets.load("models/ship.obj", Model.class);
+        assets.update();
 
         mCamera = new PerspectiveCamera(70f, cameraWidth, cameraHeight);
         mCamera.lookAt(0f, 0f, 0f);
@@ -113,23 +109,15 @@ public class GdxRenderer implements ApplicationListener {
         Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         buildWalls();
         newCube();
-        assets.finishLoading();
         //newModel();
     }
 
     @Override
     public void dispose() {
-
-        for (GameObject obj : mCubes) {
-            mWorld.removeRigidBody(obj.rigidBody);
-            obj.dispose();
+        while (mGameObjects.size() > 0) {
+            destroyGameObject(0);
         }
-        mCubes.clear();
-        for (GameObject obj : mModels) {
-            mWorld.removeRigidBody(obj.rigidBody);
-            obj.dispose();
-        }
-        mModels.clear();
+        mGameObjects.clear();
         for (GameObject obj : mWalls) {
             mWorld.removeRigidBody(obj.rigidBody);
             obj.dispose();
@@ -143,16 +131,20 @@ public class GdxRenderer implements ApplicationListener {
         mModelBatch.dispose();
         assets.dispose();
         // mWorld.dispose();
-
     }
 
     @Override
     public void render() {
-        if (mCubes.size() == 0) {
+        if (mGameObjects.size() == 0) {
             return;
         }
+        if (!assets.update()) {
+            float p = assets.getProgress();
+            Gdx.gl20.glClearColor(p, p, p, 0f);
+        } else {
+            Gdx.gl20.glClearColor(1f, 1f, 1f, 0f);
+        }
         checkGameObjectCounts();
-        Gdx.gl20.glClearColor(1f, 1f, 1f, 0f);
         Gdx.gl20.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
         Gdx.gl20.glEnable(GL20.GL_DEPTH_TEST);
         Gdx.gl20.glEnable(GL20.GL_BLEND);
@@ -164,8 +156,7 @@ public class GdxRenderer implements ApplicationListener {
         mWorld.stepSimulation(dt, 5, 1 / 60f);
         mModelBatch.begin(mCamera);
         mModelBatch.render(mWalls, mEnvironment);
-        mModelBatch.render(mCubes, mEnvironment);
-        mModelBatch.render(mModels, mEnvironment);
+        mModelBatch.render(mGameObjects, mEnvironment);
         mModelBatch.end();
     }
 
@@ -183,18 +174,18 @@ public class GdxRenderer implements ApplicationListener {
     }
 
     public void newModel() {
-        if (mModels.size() >= MAX_MODEL_COUNT) {
+        if (!assets.isLoaded("models/andy.g3db", Model.class)) {
             return;
         }
         Model model = assets.get("models/andy.g3db", Model.class);
-        btCollisionShape shape = new btBoxShape(new Vector3(1f, 1.2f, 1f));
+        btCollisionShape shape = new btBoxShape(new Vector3(1f, 1f, 1f));
         GameObject obj = new GameObject.Builder()
                 .setMass(1f)
-                .setModel(model)
+                .setModel(model, true)
                 .setShape(shape)
                 .create();
         mWorld.addRigidBody(obj.rigidBody, OBJECT_FLAG, ALL_FLAG);
-        mModels.add(obj);
+        mGameObjects.add(obj);
     }
 
     public void newCube() {
@@ -212,7 +203,7 @@ public class GdxRenderer implements ApplicationListener {
                 .setShape(shape)
                 .create();
         mWorld.addRigidBody(cube.rigidBody, OBJECT_FLAG, ALL_FLAG);
-        mCubes.add(cube);
+        mGameObjects.add(cube);
     }
 
 
@@ -257,16 +248,13 @@ public class GdxRenderer implements ApplicationListener {
 
 
     private void checkGameObjectCounts() {
-        if (mCubes.size() > MAX_GAME_OBJECT_COUNT) {
-            destroyGameObject(mCubes, 0);
-        }
-        if (mModels.size() > MAX_MODEL_COUNT) {
-            destroyGameObject(mModels, 0);
+        if (mGameObjects.size() > MAX_GAME_OBJECT_COUNT) {
+            destroyGameObject(0);
         }
     }
 
-    private void destroyGameObject(List<GameObject> objs, int index) {
-        GameObject obj = objs.remove(index);
+    private void destroyGameObject(int index) {
+        GameObject obj = mGameObjects.remove(index);
         mWorld.removeRigidBody(obj.rigidBody);
         obj.dispose();
     }

@@ -14,13 +14,6 @@ public class GameObject extends ModelInstance implements Disposable {
     public final btRigidBody rigidBody;
     public final btMotionState motionState;
 
-    private GameObject(Model model, btRigidBody.btRigidBodyConstructionInfo info) {
-        super(model);
-        rigidBody = new btRigidBody(info);
-        motionState = new MotionState();
-        rigidBody.setMotionState(motionState);
-    }
-
     private GameObject(Config cfg) {
         super(cfg.model);
         rigidBody = new btRigidBody(cfg.constructInfo);
@@ -39,6 +32,7 @@ public class GameObject extends ModelInstance implements Disposable {
     }
 
     private static class Config implements Disposable {
+        private boolean withAsset = false;
         private float mass;
         private Vector3 localInertia;
         private Model model;
@@ -47,7 +41,9 @@ public class GameObject extends ModelInstance implements Disposable {
 
         @Override
         public void dispose() {
-            model.dispose();
+            if (!withAsset) {
+                model.dispose();
+            }
             shape.dispose();
             constructInfo.dispose();
         }
@@ -60,9 +56,14 @@ public class GameObject extends ModelInstance implements Disposable {
             cfg = new Config();
         }
 
-        public Builder setModel(Model model) {
+        public Builder setModel(Model model, boolean asset) {
+            cfg.withAsset = asset;
             cfg.model = model;
             return this;
+        }
+
+        public Builder setModel(Model model) {
+            return setModel(model, false);
         }
 
         public Builder setShape(btCollisionShape shape) {
