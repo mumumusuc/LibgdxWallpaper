@@ -65,9 +65,9 @@ public class AndroidLauncher extends AndroidApplication implements InputProcesso
         //Gdx.input.setCatchBackKey(true);
     }
 
-    public void addBall(boolean isleft) {
+    public void add() {
         if (Math.random() > 0.1)
-            box2dEffectView.newModel();
+            box2dEffectView.newCube();
         else
             box2dEffectView.newModel();
     }
@@ -99,7 +99,7 @@ public class AndroidLauncher extends AndroidApplication implements InputProcesso
 
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-        addBall(false);
+        add();
         return true;
     }
 
