@@ -31,9 +31,11 @@ import com.badlogic.gdx.physics.bullet.collision.btCollisionConfiguration;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionDispatcher;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionShape;
+import com.badlogic.gdx.physics.bullet.collision.btCylinderShape;
 import com.badlogic.gdx.physics.bullet.collision.btDbvtBroadphase;
 import com.badlogic.gdx.physics.bullet.collision.btDefaultCollisionConfiguration;
 import com.badlogic.gdx.physics.bullet.collision.btDispatcher;
+import com.badlogic.gdx.physics.bullet.collision.btSphereShape;
 import com.badlogic.gdx.physics.bullet.dynamics.btDiscreteDynamicsWorld;
 import com.badlogic.gdx.physics.bullet.dynamics.btDynamicsWorld;
 import com.badlogic.gdx.physics.bullet.dynamics.btSequentialImpulseConstraintSolver;
@@ -46,16 +48,15 @@ public class GdxRenderer implements ApplicationListener {
     private static final String TAG = "GdxRenderer";
     private static final float PXTM = 1f;
     private static final float PLANT_SIZE = 20f;
-    private static final float PLANT_THICKNESS = 0.1f;
+    private static final float PLANT_THICKNESS = 0.2f;
     private static final float CUBE_SIZE = PLANT_SIZE / 8;
-    private static final short MAX_GAME_OBJECT_COUNT = 30;
+    private static final short MAX_GAME_OBJECT_COUNT = 50;
     private static final short GROUND_FLAG = 1 << 8;
     private static final short OBJECT_FLAG = 1 << 9;
     private static final short ALL_FLAG = -1;
     private static final short GRAVITY_MULTIPLIER = -20;
-    private AssetManager assets;
 
-    private Vector3 mWG = new Vector3(0f, -10f, 0f);
+    private AssetManager assets;
     private btDynamicsWorld mWorld;
     private btDbvtBroadphase mBroadpharse;
     private btSequentialImpulseConstraintSolver mConstraintSolver;
@@ -85,7 +86,6 @@ public class GdxRenderer implements ApplicationListener {
 
         assets = new AssetManager();
         assets.load("models/andy.g3db", Model.class);
-        assets.update();
 
         mCamera = new PerspectiveCamera(70f, cameraWidth, cameraHeight);
         mCamera.lookAt(0f, 0f, 0f);
@@ -106,12 +106,10 @@ public class GdxRenderer implements ApplicationListener {
         mBroadpharse = new btDbvtBroadphase();
         mConstraintSolver = new btSequentialImpulseConstraintSolver();
         mWorld = new btDiscreteDynamicsWorld(mColDispatcher, mBroadpharse, mConstraintSolver, mColCfg);
-        mWorld.setGravity(mWG);
 
         Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         buildWalls();
         newCube();
-        //newModel();
     }
 
     @Override
@@ -180,16 +178,13 @@ public class GdxRenderer implements ApplicationListener {
             return;
         }
         Model model = assets.get("models/andy.g3db", Model.class);
-        BoundingBox box = new BoundingBox();
-        model.calculateBoundingBox(box);
-        Vector3 vec = new Vector3();
-        vec = box.getDimensions(vec);
-        btCollisionShape shape = new btBoxShape(vec.scl(0.5f));
         GameObject obj = new GameObject.Builder()
                 .setMass(1f)
                 .setModel(model, true)
-                .setShape(shape)
+                .setShape(btBoxShape.class)
+                .setScale(1.5f)
                 .create();
+        obj.transform.scale(10f, 10f, 10f);
         mWorld.addRigidBody(obj.rigidBody, OBJECT_FLAG, ALL_FLAG);
         mGameObjects.add(obj);
     }
@@ -202,11 +197,10 @@ public class GdxRenderer implements ApplicationListener {
                 Usage.Normal | Usage.Position | Usage.TextureCoordinates
         );
         model.materials.get(0).set(new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA));
-        btCollisionShape shape = new btBoxShape(new Vector3(CUBE_SIZE / 2, CUBE_SIZE / 2, CUBE_SIZE / 2));
         GameObject cube = new GameObject.Builder()
                 .setMass(10f)
                 .setModel(model)
-                .setShape(shape)
+                .setShape(btBoxShape.class)
                 .create();
         mWorld.addRigidBody(cube.rigidBody, OBJECT_FLAG, ALL_FLAG);
         mGameObjects.add(cube);
@@ -238,11 +232,10 @@ public class GdxRenderer implements ApplicationListener {
                 new Material(ColorAttribute.createDiffuse(0.3f, 0.3f, 0.3f, alpha)),
                 Usage.Normal | Usage.Position);
         model.materials.get(0).set(new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA));
-        btCollisionShape shape = new btBoxShape(new Vector3(PLANT_SIZE / 2, PLANT_SIZE, PLANT_THICKNESS / 2));
         GameObject obj = new GameObject.Builder()
                 .setMass(0f)
                 .setModel(model)
-                .setShape(shape)
+                .setShape(btBoxShape.class)
                 .create();
         obj.transform.setToTranslation(x, y, z);
         obj.transform.rotate(r, d);

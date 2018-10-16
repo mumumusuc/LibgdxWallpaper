@@ -44,6 +44,7 @@ public class AndroidLauncher extends AndroidApplication implements InputProcesso
 
     private View CreateGLAlpha(ApplicationListener application) {
         AndroidApplicationConfiguration cfg = new AndroidApplicationConfiguration();
+        cfg.numSamples = 2;
         cfg.r = cfg.g = cfg.b = cfg.a = 8;
         View view = initializeForView(application, cfg);
         if (view instanceof SurfaceView) {
@@ -62,7 +63,6 @@ public class AndroidLauncher extends AndroidApplication implements InputProcesso
         mContainer = findViewById(R.id.container);
         mContainer.addView(view);
         Gdx.input.setInputProcessor(this);
-        //Gdx.input.setCatchBackKey(true);
     }
 
     public void add() {
