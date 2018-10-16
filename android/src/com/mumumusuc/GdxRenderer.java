@@ -20,6 +20,7 @@ import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
+import com.badlogic.gdx.graphics.g3d.utils.CameraInputController;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
@@ -32,10 +33,10 @@ import com.badlogic.gdx.physics.bullet.collision.btCollisionDispatcher;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionShape;
 import com.badlogic.gdx.physics.bullet.collision.btCylinderShape;
+import com.badlogic.gdx.physics.bullet.collision.btSphereShape;
 import com.badlogic.gdx.physics.bullet.collision.btDbvtBroadphase;
 import com.badlogic.gdx.physics.bullet.collision.btDefaultCollisionConfiguration;
 import com.badlogic.gdx.physics.bullet.collision.btDispatcher;
-import com.badlogic.gdx.physics.bullet.collision.btSphereShape;
 import com.badlogic.gdx.physics.bullet.dynamics.btDiscreteDynamicsWorld;
 import com.badlogic.gdx.physics.bullet.dynamics.btDynamicsWorld;
 import com.badlogic.gdx.physics.bullet.dynamics.btSequentialImpulseConstraintSolver;
@@ -46,9 +47,9 @@ import java.util.List;
 
 public class GdxRenderer implements ApplicationListener {
     private static final String TAG = "GdxRenderer";
-    private static final float PXTM = 1f;
     private static final float PLANT_SIZE = 20f;
-    private static final float PLANT_THICKNESS = 0.2f;
+    private static final float PLANT_THICKNESS = 0.1f;
+    private static final float PLANT_ALPHA = 0.05f;
     private static final float CUBE_SIZE = PLANT_SIZE / 8;
     private static final short MAX_GAME_OBJECT_COUNT = 50;
     private static final short GROUND_FLAG = 1 << 8;
@@ -61,6 +62,7 @@ public class GdxRenderer implements ApplicationListener {
     private btDbvtBroadphase mBroadpharse;
     private btSequentialImpulseConstraintSolver mConstraintSolver;
     private PerspectiveCamera mCamera;
+    private CameraController mCameraController;
     private Environment mEnvironment;
     private Texture mTexture;
     private ModelBatch mModelBatch;
@@ -70,29 +72,24 @@ public class GdxRenderer implements ApplicationListener {
     private List<GameObject> mWalls = new ArrayList<>();
     private List<GameObject> mGameObjects = new ArrayList<>();
 
-    public GdxRenderer() {
-
-    }
-
-
     @Override
     public void create() {
         float w = Gdx.graphics.getWidth();
         float h = Gdx.graphics.getHeight();
-        float cameraWidth = w / PXTM;
-        float cameraHeight = h / PXTM;
 
         Bullet.init();
 
         assets = new AssetManager();
         assets.load("models/andy.g3db", Model.class);
 
-        mCamera = new PerspectiveCamera(70f, cameraWidth, cameraHeight);
+        mCamera = new PerspectiveCamera(70f, w, h);
         mCamera.lookAt(0f, 0f, 0f);
         mCamera.near = 1f;
         mCamera.far = 300f;
         mCamera.position.set(0f, 0f, PLANT_SIZE);
         mCamera.update();
+        mCameraController = new CameraController(mCamera);
+        Gdx.input.setInputProcessor(mCameraController);
 
         mEnvironment = new Environment();
         mEnvironment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.5f, 0.5f, 0.5f, 1f));
@@ -130,7 +127,7 @@ public class GdxRenderer implements ApplicationListener {
         mTexture.dispose();
         mModelBatch.dispose();
         assets.dispose();
-        // mWorld.dispose();
+        mWorld.release();
     }
 
     @Override
@@ -144,6 +141,7 @@ public class GdxRenderer implements ApplicationListener {
         } else {
             Gdx.gl20.glClearColor(1f, 1f, 1f, 0f);
         }
+        mCameraController.update();
         checkGameObjectCounts();
         Gdx.gl20.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
         Gdx.gl20.glEnable(GL20.GL_DEPTH_TEST);
@@ -212,15 +210,15 @@ public class GdxRenderer implements ApplicationListener {
         final float w = PLANT_SIZE * WHR;
         final float h = PLANT_SIZE;
         //bottom
-        buildWall(w, w, 0, -h / 2, 0, new Vector3(1f, 0, 0), 90f, 0.1f);
+        buildWall(w, w, 0, -h / 2, 0, new Vector3(1f, 0, 0), 90f, PLANT_ALPHA);
         //top
-        buildWall(w, w, 0, h / 2, 0, new Vector3(1f, 0, 0), 90f, 0.1f);
+        buildWall(w, w, 0, h / 2, 0, new Vector3(1f, 0, 0), 90f, PLANT_ALPHA);
         //left
-        buildWall(w, h, -w / 2, 0, 0, new Vector3(0, 1f, 0), 90f, 0.1f);
+        buildWall(w, h, -w / 2, 0, 0, new Vector3(0, 1f, 0), 90f, PLANT_ALPHA);
         //right
-        buildWall(w, h, w / 2, 0, 0, new Vector3(0, 1f, 0), 90f, 0.1f);
+        buildWall(w, h, w / 2, 0, 0, new Vector3(0, 1f, 0), 90f, PLANT_ALPHA);
         //far
-        buildWall(w, h, 0, 0, -w / 2, new Vector3(1f, 0, 0), 0f, 0.1f);
+        buildWall(w, h, 0, 0, -w / 2, new Vector3(1f, 0, 0), 0f, PLANT_ALPHA);
         //near
         buildWall(w, h, 0, 0, w / 2, new Vector3(1f, 0, 0), 0f, 0f);
     }

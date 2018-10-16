@@ -73,10 +73,7 @@ public class AndroidLauncher extends AndroidApplication implements InputProcesso
     }
 
     public void cleanGDX() {
-        try {
-            box2dEffectView.dispose();
-        } catch (Exception e) {
-        }
+        box2dEffectView.dispose();
         mContainer.removeAllViews();
         box2dEffectView = null;
     }
