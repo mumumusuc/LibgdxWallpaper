@@ -1,12 +1,5 @@
 package com.mumumusuc;
 
-
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
-import android.util.Log;
-
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
@@ -20,20 +13,15 @@ import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
-import com.badlogic.gdx.graphics.g3d.utils.CameraInputController;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
-import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.physics.bullet.Bullet;
 import com.badlogic.gdx.physics.bullet.collision.Collision;
 import com.badlogic.gdx.physics.bullet.collision.btBoxShape;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionConfiguration;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionDispatcher;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
-import com.badlogic.gdx.physics.bullet.collision.btCollisionShape;
-import com.badlogic.gdx.physics.bullet.collision.btCylinderShape;
-import com.badlogic.gdx.physics.bullet.collision.btSphereShape;
 import com.badlogic.gdx.physics.bullet.collision.btDbvtBroadphase;
 import com.badlogic.gdx.physics.bullet.collision.btDefaultCollisionConfiguration;
 import com.badlogic.gdx.physics.bullet.collision.btDispatcher;
@@ -71,6 +59,7 @@ public class GdxRenderer implements ApplicationListener {
     private btDispatcher mColDispatcher;
     private List<GameObject> mWalls = new ArrayList<>();
     private List<GameObject> mGameObjects = new ArrayList<>();
+    private Vector3 mGravity = new Vector3();
 
     @Override
     public void create() {
@@ -141,6 +130,7 @@ public class GdxRenderer implements ApplicationListener {
         } else {
             Gdx.gl20.glClearColor(1f, 1f, 1f, 0f);
         }
+        updateGravity(mGravity);
         mCameraController.update();
         checkGameObjectCounts();
         Gdx.gl20.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
@@ -257,30 +247,12 @@ public class GdxRenderer implements ApplicationListener {
     }
 
 
-    public void updateGravity(Vector3 g) {
+    private void updateGravity(Vector3 g) {
+        g.set(
+                Gdx.input.getAccelerometerX(),
+                Gdx.input.getAccelerometerY(),
+                Gdx.input.getAccelerometerZ()
+        ).scl(GRAVITY_MULTIPLIER);
         mWorld.setGravity(g);
     }
-
-
-    public SensorEventListener getSensorEventListener() {
-        return mListener;
-    }
-
-    private SensorEventListener mListener = new SensorEventListener() {
-        @Override
-        public void onSensorChanged(SensorEvent event) {
-            float x = event.values[SensorManager.DATA_X];
-            float y = event.values[SensorManager.DATA_Y];
-            float z = event.values[SensorManager.DATA_Z];
-            updateGravity(new Vector3(
-                    x * GRAVITY_MULTIPLIER,
-                    y * GRAVITY_MULTIPLIER,
-                    z * GRAVITY_MULTIPLIER));
-        }
-
-        @Override
-        public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
-        }
-    };
 }

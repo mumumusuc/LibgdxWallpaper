@@ -21,8 +21,6 @@ import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
 public class AndroidLauncher extends AndroidApplication implements InputProcessor {
     private final String TAG = "MainActivity";
     private LinearLayout mContainer;
-    private SensorManager mSensorManager;
-    private Sensor mGravitySensor;
     private GdxRenderer box2dEffectView;
 
     @Override
@@ -30,15 +28,11 @@ public class AndroidLauncher extends AndroidApplication implements InputProcesso
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_layout);
         buildGDX();
-        mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        mGravitySensor = mSensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
-        mSensorManager.registerListener(box2dEffectView.getSensorEventListener(), mGravitySensor, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mSensorManager.unregisterListener(box2dEffectView.getSensorEventListener());
         cleanGDX();
     }
 

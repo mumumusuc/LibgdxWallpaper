@@ -1,9 +1,6 @@
 package com.mumumusuc;
 
-import android.content.Context;
 import android.graphics.PixelFormat;
-import android.hardware.Sensor;
-import android.hardware.SensorManager;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputProcessor;
@@ -13,8 +10,6 @@ import com.badlogic.gdx.backends.android.AndroidLiveWallpaperService;
 public class GLWallpaperService extends AndroidLiveWallpaperService implements InputProcessor {
 
     private GdxRenderer box2dEffectView;
-    private SensorManager mSensorManager;
-    private Sensor mGravitySensor;
 
     @Override
     public void onCreateApplication() {
@@ -25,15 +20,11 @@ public class GLWallpaperService extends AndroidLiveWallpaperService implements I
         getSurfaceHolder().setFormat(PixelFormat.TRANSLUCENT);
         initialize(box2dEffectView, cfg);
         Gdx.input.setInputProcessor(this);
-        mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        mGravitySensor = mSensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
-        mSensorManager.registerListener(box2dEffectView.getSensorEventListener(), mGravitySensor, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        mSensorManager.unregisterListener(box2dEffectView.getSensorEventListener());
     }
 
     @Override
