@@ -64,6 +64,7 @@ public class CameraController extends CameraInputController {
 
     protected void onLongPressed(float x, float y) {
         if (state == Fixed || state == Free) {
+            Gdx.input.vibrate(20);
             stateTransformer.transform(state, Pause);
         }
     }
